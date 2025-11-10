@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة الذاكرة - مفاجأة عيد الميلاد</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50, #4a6572);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        .container {
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            color: #FFD700;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin: 0 auto 20px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-box {
+            text-align: center;
+            flex: 1;
+        }
+
+        .info-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #FFD700;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 20px auto;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #34495e, #5d6d7e);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            user-select: none;
+        }
+
+        .card.flipped {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            transform: rotateY(180deg);
+            font-size: 1.8rem;
+        }
+
+        .card.matched {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            cursor: default;
+            transform: scale(0.95);
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+            flex: 1;
+            max-width: 150px;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.6);
+        }
+
+        .message {
+            font-size: 2rem;
+            margin: 20px 0;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            opacity: 0;
+            transition: opacity 1s;
+            color: #FFD700;
+            position: relative;
+            z-index: 20;
+            line-height: 1.4;
+        }
+
+        .show {
+            opacity: 1;
+        }
+
+        .celebration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .firework {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            box-shadow: 0 0 10px 2px;
+        }
+
+        .number-animation {
+            position: fixed;
+            font-size: 4rem;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            opacity: 0;
+            z-index: 15;
+        }
+
+        .black-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 25;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s;
+        }
+
+        .copyright {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* تحسينات للجوال */
+        @media (max-width: 500px) {
+            h1 { font-size: 2rem; }
+            .game-board { 
+                grid-template-columns: repeat(4, 1fr); 
+                max-width: 90vw;
+                gap: 6px;
+            }
+            .card { font-size: 0; }
+            .card.flipped { font-size: 1.5rem; }
+            .message { font-size: 1.6rem; }
+            .number-animation { font-size: 3rem; }
+            .controls { flex-direction: column; align-items: center; }
+            button { max-width: 200px; width: 100%; }
+        }
+
+        @media (max-width: 350px) {
+            h1 { font-size: 1.7rem; }
+            .subtitle { font-size: 1rem; }
+            .game-board { gap: 4px; }
+            .card.flipped { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="floating">🎮 لعبة الذاكرة 🎮</h1>
+        <p class="subtitle">اطابق بين الرموز المتشابهة لاكتشاف المفاجأة!</p>
+        
+        <div class="game-info">
+            <div class="info-box">
+                <div class="info-label">الوقت</div>
+                <div class="info-value" id="time">0</div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">المحاولات</div>
+                <div class="info-value" id="moves">0</div>
+            </div>
+        </div>
+        
+        <div class="game-board" id="gameBoard"></div>
+        
+        <div class="controls">
+            <button id="startBtn">ابدأ اللعبة</button>
+            <button id="resetBtn">إعادة اللعبة</button>
+        </div>
+        
+        <div class="message" id="message">كل عام وأنت بخير! 🎂🎉</div>
+        
+        <div class="copyright">© 2025 Taim - جميع الحقوق محفوظة</div>
+    </div>
+    
+    <div class="celebration" id="celebration"></div>
+    <div class="black-screen" id="blackScreen"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const gameBoard = document.getElementById('gameBoard');
+            const startBtn = document.getElementById('startBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const timeDisplay = document.getElementById('time');
+            const movesDisplay = document.getElementById('moves');
+            const celebration = document.getElementById('celebration');
+            const message = document.getElementById('message');
+            const blackScreen = document.getElementById('blackScreen');
+            
+            // رموز اللعبة (إيموجي)
+            const emojis = ['🎂', '🎁', '🎈', '🎉', '🥳', '🎊', '⭐', '❤️'];
+            
+            let cards = [];
+            let flippedCards = [];
+            let matchedPairs = 0;
+            let gameStarted = false;
+            let timer;
+            let seconds = 0;
+            let moves = 0;
+            
+            // تهيئة اللعبة
+            function initGame() {
+                gameBoard.innerHTML = '';
+                cards = [];
+                flippedCards = [];
+                matchedPairs = 0;
+                seconds = 0;
+                moves = 0;
+                timeDisplay.textContent = seconds;
+                movesDisplay.textContent = moves;
+                message.classList.remove('show');
+                blackScreen.style.opacity = '0';
+                
+                // إنشاء أزواج الرموز
+                const gameEmojis = [...emojis, ...emojis];
+                
+                // خلط الرموز عشوائياً
+                for (let i = gameEmojis.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [gameEmojis[i], gameEmojis[j]] = [gameEmojis[j], gameEmojis[i]];
+                }
+                
+                // إنشاء البطاقات
+                gameEmojis.forEach((emoji, index) => {
+                    const card = document.createElement('div');
+                    card.classList.add('card');
+                    card.dataset.emoji = emoji;
+                    card.dataset.index = index;
+                    
+                    card.addEventListener('click', () => flipCard(card));
+                    
+                    gameBoard.appendChild(card);
+                    cards.push(card);
+                });
+                
+                gameStarted = true;
+                startTimer();
+            }
+            
+            // قلب البطاقة
+            function flipCard(card) {
+                if (!gameStarted || card.classList.contains('flipped') || 
+                    card.classList.contains('matched') || flippedCards.length === 2) {
+                    return;
+                }
+                
+                card.classList.add('flipped');
+                card.textContent = card.dataset.emoji;
+                flippedCards.push(card);
+                
+                if (flippedCards.length === 2) {
+                    moves++;
+                    movesDisplay.textContent = moves;
+                    checkMatch();
+                }
+            }
+            
+            // التحقق من تطابق البطاقات
+            function checkMatch() {
+                const [card1, card2] = flippedCards;
+                
+                if (card1.dataset.emoji === card2.dataset.emoji) {
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    matchedPairs++;
+                    
+                    if (matchedPairs === emojis.length) {
+                        endGame();
+                    }
+                    
+                    flippedCards = [];
+                } else {
+                    setTimeout(() => {
+                        card1.classList.remove('flipped');
+                        card2.classList.remove('flipped');
+                        card1.textContent = '';
+                        card2.textContent = '';
+                        flippedCards = [];
+                    }, 1000);
+                }
+            }
+            
+            // بدء المؤقت
+            function startTimer() {
+                clearInterval(timer);
+                timer = setInterval(() => {
+                    seconds++;
+                    timeDisplay.textContent = seconds;
+                }, 1000);
+            }
+            
+            // انتهاء اللعبة
+            function endGame() {
+                gameStarted = false;
+                clearInterval(timer);
+                
+                // تشغيل تسلسل الاحتفال
+                startCelebrationSequence();
+            }
+            
+            // تسلسل الاحتفال
+            function startCelebrationSequence() {
+                // 1. تحويل الشاشة إلى سوداء
+                setTimeout(() => {
+                    blackScreen.style.opacity = '1';
+                }, 500);
+                
+                // 2. عرض الأرقام من الزوايا
+                setTimeout(() => {
+                    blackScreen.style.opacity = '0';
+                    animateNumbers();
+                }, 2000);
+                
+                // 3. عرض الرسالة النهائية
+                setTimeout(() => {
+                    message.classList.add('show');
+                    createFireworks();
+                }, 6000);
+            }
+            
+            // أنيميشن الأرقام
+            function animateNumbers() {
+                const positions = [
+                    { top: '10%', left: '10%' },
+                    { top: '10%', right: '10%' },
+                    { bottom: '10%', left: '10%' },
+                    { bottom: '10%', right: '10%' }
+                ];
+                
+                // إنشاء الأرقام في الزوايا
+                positions.forEach((pos, index) => {
+                    const number = document.createElement('div');
+                    number.classList.add('number-animation');
+                    number.textContent = '1';
+                    number.style.top = pos.top;
+                    number.style.left = pos.left;
+                    number.style.right = pos.right;
+                    number.style.bottom = pos.bottom;
+                    number.style.opacity = '1';
+                    
+                    document.body.appendChild(number);
+                });
+                
+                // تحريك الأرقام نحو المركز
+                setTimeout(() => {
+                    const numbers = document.querySelectorAll('.number-animation');
+                    
+                    numbers.forEach((number, index) => {
+                        // حساب الموضع النهائي لكل رقم
+                        let finalTop, finalLeft;
+                        
+                        switch(index) {
+                            case 0: // الزاوية العلوية اليسرى
+                                finalTop = '40%';
+                                finalLeft = '40%';
+                                break;
+                            case 1: // الزاوية العلوية اليمنى
+                                finalTop = '40%';
+                                finalLeft = '60%';
+                                break;
+                            case 2: // الزاوية السفلية اليسرى
+                                finalTop = '60%';
+                                finalLeft = '40%';
+                                break;
+                            case 3: // الزاوية السفلية اليمنى
+                                finalTop = '60%';
+                                finalLeft = '60%';
+                                break;
+                        }
+                        
+                        // تطبيق الحركة
+                        number.style.transition = 'all 1.5s ease-in-out';
+                        number.style.top = finalTop;
+                        number.style.left = finalLeft;
+                        number.style.transform = 'translate(-50%, -50%)';
+                    });
+                    
+                    // بعد اكتمال الحركة، استبدال بـ 11/11
+                    setTimeout(() => {
+                        numbers.forEach(number => number.remove());
+                        
+                        const finalNumber = document.createElement('div');
+                        finalNumber.classList.add('number-animation');
+                        finalNumber.textContent = '11/11';
+                        finalNumber.style.top = '50%';
+                        finalNumber.style.left = '50%';
+                        finalNumber.style.transform = 'translate(-50%, -50%)';
+                        finalNumber.style.opacity = '1';
+                        finalNumber.style.fontSize = '5rem';
+                        
+                        document.body.appendChild(finalNumber);
+                        
+                        // إخفاء الرقم بعد ثانيتين
+                        setTimeout(() => {
+                            finalNumber.style.opacity = '0';
+                            finalNumber.style.transition = 'opacity 1s';
+                        }, 2000);
+                    }, 1600);
+                }, 500);
+            }
+            
+            // إنشاء الألعاب النارية
+            function createFireworks() {
+                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffffff', '#FFD700'];
+                
+                // إنشاء 30 لعبة نارية
+                for (let i = 0; i < 30; i++) {
+                    setTimeout(() => {
+                        createFirework();
+                    }, i * 300);
+                }
+            }
+            
+            // إنشاء لعبة نارية واحدة
+            function createFirework() {
+                const firework = document.createElement('div');
+                firework.classList.add('firework');
+                
+                // لون عشوائي
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                firework.style.backgroundColor = color;
+                firework.style.boxShadow = `0 0 10px 2px ${color}`;
+                
+                // موقع عشوائي
+                const x = Math.random() * 100;
+                const y = Math.random() * 100;
+                firework.style.left = `${x}%`;
+                firework.style.top = `${y}%`;
+                
+                celebration.appendChild(firework);
+                
+                // أنيميشن للعبة النارية
+                const size = 5 + Math.random() * 10;
+                const duration = 1 + Math.random() * 2;
+                
+                firework.animate([
+                    { transform: 'scale(0)', opacity: 1 },
+                    { transform: `scale(${size})`, opacity: 0 }
+                ], {
+                    duration: duration * 1000,
+                    easing: 'cubic-bezier(0, 0.9, 0.57, 1)'
+                });
+                
+                // إزالة اللعبة النارية بعد الأنيميشن
+                setTimeout(() => {
+                    firework.remove();
+                }, duration * 1000);
+            }
+            
+            // أحداث الأزرار
+            startBtn.addEventListener('click', initGame);
+            resetBtn.addEventListener('click', initGame);
+            
+            // بدء اللعبة تلقائياً عند تحميل الصفحة
+            initGame();
+        });
+    </script>
+</body>
+</html>
